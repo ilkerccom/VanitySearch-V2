@@ -168,7 +168,7 @@ void getKeySpace(const string& text, BITCRACK_PARAM* bc, Int& maxKey)
 			for (int i = 0; i < 32; i++)
 			{
 				unsigned char my1ch = 0;
-				if (scanf(&item[2 * i], "%02hhX", &my1ch)) {};
+				if (sscanf(&item[2 * i], "%02hhX", &my1ch)) {};
 				bc->ksFinish.SetByte(31 - i, my1ch);
 			}
 		}
@@ -186,6 +186,7 @@ void getKeySpace(const string& text, BITCRACK_PARAM* bc, Int& maxKey)
 
 void checkKeySpace(BITCRACK_PARAM* bc, Int& maxKey)
 {
+
 	if (bc->ksStart.IsGreater(&maxKey) || bc->ksFinish.IsGreater(&maxKey))
 	{
 		fprintf(stderr, "[ERROR] START/END IsGreater %s \n", maxKey.GetBase16().c_str());
@@ -307,7 +308,8 @@ void outputAdd(string outputFile, int addrType, string addr, string pAddr, strin
 		fprintf(f, "Priv (WIF): p2wpkh:%s\n", pAddr.c_str());
 		break;
 	}
-	fprintf(f, "Priv (HEX): 0x%s\n", pAddrHex.c_str());
+	std::string paddedHex = std::string(64 - pAddrHex.length(), '0') + pAddrHex;
+	fprintf(f, "Priv (HEX): 0x%s\n", paddedHex.c_str());
 
 	if (needToClose)
 		fclose(f);
