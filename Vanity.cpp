@@ -501,67 +501,60 @@ string VanitySearch::GetExpectedTimeBitCrack(double keyRate, double keyCount, BI
 
 void VanitySearch::output(string addr, string pAddr, string pAddrHex, std::string pubKey) {
 
-#ifdef WIN64
-	WaitForSingleObject(ghMutex, INFINITE);
-#else
-	pthread_mutex_lock(&ghMutex);
-#endif
-
-	FILE* f = stdout;
-	bool needToClose = false;
-
-	if (outputFile.length() > 0) {
-		f = fopen(outputFile.c_str(), "a");
-		if (f == NULL) {
-			fprintf(stderr, "Cannot open %s for writing\n", outputFile.c_str());
-			f = stdout;
+	#ifdef WIN64
+		WaitForSingleObject(ghMutex, INFINITE);
+	#else
+		pthread_mutex_lock(&ghMutex);
+	#endif
+	
+		FILE* f = stdout;
+		bool needToClose = false;
+	
+		if (outputFile.length() > 0) {
+			f = fopen(outputFile.c_str(), "a");
+			if (f == NULL) {
+				fprintf(stderr, "Cannot open %s for writing\n", outputFile.c_str());
+				f = stdout;
+			}
+			else {
+				needToClose = true;
+			}
 		}
-		else {
-			needToClose = true;
+	
+		std::string paddedHex = std::string(64 - pAddrHex.length(), '0') + pAddrHex;
+
+		if (f != stdout) {
+			std::string fileOutput = addr + " " + paddedHex + " " + pAddr;
+			fprintf(f, "%s\n", fileOutput.c_str());
 		}
-	}
-
-	fprintf(f, "\nPublic Addr: %s\n", addr.c_str());	
-	fprintf(stdout, "\nPublic Addr: %s\n", addr.c_str());
-	//fprintf(stderr, "\nPublic Addr: %s\n", addr.c_str());
-
-	switch (searchType) {
-	case P2PKH:
-		fprintf(f, "Priv (WIF): p2pkh:%s\n", pAddr.c_str());
-		fprintf(stdout, "Priv (WIF): p2pkh:%s\n", pAddr.c_str());
-		//fprintf(stderr, "Priv (WIF): p2pkh:%s\n", pAddr.c_str());
-		break;
-	case P2SH:
-		fprintf(f, "Priv (WIF): p2wpkh-p2sh:%s\n", pAddr.c_str());
-		fprintf(stdout, "Priv (WIF): p2wpkh-p2sh:%s\n", pAddr.c_str());
-		//fprintf(stderr, "Priv (WIF): p2wpkh-p2sh:%s\n", pAddr.c_str());
-		break;
-	case BECH32:
-		fprintf(f, "Priv (WIF): p2wpkh:%s\n", pAddr.c_str());
-		fprintf(stdout, "Priv (WIF): p2wpkh:%s\n", pAddr.c_str());
-		//fprintf(stderr, "Priv (WIF): p2wpkh:%s\n", pAddr.c_str());
-		break;
-	}
-
-	fprintf(f, "Priv (HEX): 0x%064s\n", pAddrHex.c_str());	
-	fprintf(stdout, "Priv (HEX): 0x%064s\n", pAddrHex.c_str());
-	//fprintf(stderr, "Priv (HEX): 0x%064s\n", pAddrHex.c_str());
-
-	//fprintf(f, "PubK (HEX): 0x%s\n", pubKey.c_str());
-	//fprintf(stdout, "PubK (HEX): 0x%s\n", pubKey.c_str());
-
-	fflush(f);
-	fflush(stdout);
-	//fflush(stderr);	
-
-	if (needToClose)
-		fclose(f);
-
-#ifdef WIN64
-	ReleaseMutex(ghMutex);
-#else
-	pthread_mutex_unlock(&ghMutex);
-#endif
+	
+		fprintf(stdout, "\nPublic Addr: %s\n", addr.c_str());
+	
+		switch (searchType) {
+		case P2PKH:
+			fprintf(stdout, "Priv (WIF): p2pkh:%s\n", pAddr.c_str());
+			break;
+		case P2SH:
+			fprintf(stdout, "Priv (WIF): p2wpkh-p2sh:%s\n", pAddr.c_str());
+			break;
+		case BECH32:
+			fprintf(stdout, "Priv (WIF): p2wpkh:%s\n", pAddr.c_str());
+			break;
+		}	
+		
+		fprintf(stdout, "Priv (HEX): 0x%s\n", paddedHex.c_str());
+	
+		fflush(f);
+		fflush(stdout);
+	
+		if (needToClose)
+			fclose(f);
+	
+	#ifdef WIN64
+		ReleaseMutex(ghMutex);
+	#else
+		pthread_mutex_unlock(&ghMutex);
+	#endif
 }
 
 void VanitySearch::updateFound() {
