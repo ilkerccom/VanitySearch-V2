@@ -408,14 +408,12 @@ void GPUEngine::PrintCudaInfo() {
 
 	cudaError_t err;
 
-	const char* sComputeMode[] =
-	{
-	  "Multiple host threads",
-	  "Only one host thread",
-	  "No host thread",
-	  "Multiple process threads",
-	  "Unknown",
-	   NULL
+	// CUDA 13+: computeMode was removed from cudaDeviceProp
+	const char* sComputeMode4[] = {
+		"Default",             		// 0 = cudaComputeModeDefault
+		"Exclusive (deprecated)", 	// 1 = cudaComputeModeExclusive (old)
+		"Prohibited",          		// 2 = cudaComputeModeProhibited
+		"Exclusive Process"    		// 3 = cudaComputeModeExclusiveProcess
 	};
 
 	int deviceCount = 0;
@@ -442,11 +440,27 @@ void GPUEngine::PrintCudaInfo() {
 
 		cudaDeviceProp deviceProp;
 		cudaGetDeviceProperties(&deviceProp, i);
+
+		int cm = 0;
+
+#if CUDART_VERSION >= 13000
+		{
+			int _tmp = 0;
+			if (cudaDeviceGetAttribute(&_tmp, cudaDevAttrComputeMode, i) == cudaSuccess) {
+				cm = _tmp;
+			}
+		}
+#else
+		cm = deviceProp.computeMode;
+#endif
+
+		int cm_idx = (cm >= 0 && cm <= 3) ? cm : 0;
 		fprintf(stdout, "GPU #%d %s (%dx%d cores) (Cap %d.%d) (%.1f MB) (%s)\n",
 			i, deviceProp.name, deviceProp.multiProcessorCount,
 			_ConvertSMVer2Cores(deviceProp.major, deviceProp.minor),
 			deviceProp.major, deviceProp.minor, (double)deviceProp.totalGlobalMem / 1048576.0,
-			sComputeMode[deviceProp.computeMode]);
+			sComputeMode4[cm_idx]);
+
 	}
 }
 
